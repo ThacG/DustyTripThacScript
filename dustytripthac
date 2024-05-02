@@ -1,0 +1,3 @@
+autoExecuteScript = true -- set to true or false as needed
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/ThacG/DustyTripThac/main/dustytripthac"))()
