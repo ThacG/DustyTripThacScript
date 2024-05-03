@@ -1,0 +1,15 @@
+local rootPart = game.Players.LocalPlayer.Character.HumanoidRootPart
+local carsFolder = game:GetService("Workspace"):FindFirstChild("SkinData")
+
+if carsFolder then
+    for _, child in ipairs(carsFolder:GetChildren()) do
+        if child:IsA("Model") then
+            local parts = child:GetDescendants()
+            for _, part in ipairs(parts) do
+                if part:IsA("BasePart") then
+                    part.CFrame = rootPart.CFrame
+                end
+            end
+        end
+    end
+end
