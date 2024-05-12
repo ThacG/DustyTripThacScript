@@ -1,0 +1,410 @@
+local function mobber()
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local movers = {}
+local isMoving = false
+local isStarted = false
+local startButtonEnabled = true
+local originalCanCollideStates = {}
+
+local selectedMob = nil
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local buttonStart = Instance.new("TextButton")
+buttonStart.Parent = screenGui
+buttonStart.Position = UDim2.new(0, 10, 0, 10)
+buttonStart.Size = UDim2.new(0, 150, 0, 50)
+buttonStart.Text = "Start Moving Mob"
+
+local buttonStabilize = Instance.new("TextButton")
+buttonStabilize.Parent = screenGui
+buttonStabilize.Position = UDim2.new(0, 10, 0, 10)
+buttonStabilize.Size = UDim2.new(0, 150, 0, 50)
+buttonStabilize.Text = "Stabilize Mob"
+buttonStabilize.Visible = false
+
+local buttonStop = Instance.new("TextButton")
+buttonStop.Parent = screenGui
+buttonStop.Position = UDim2.new(0, 10, 0, 10)
+buttonStop.Size = UDim2.new(0, 150, 0, 50)
+buttonStop.Text = "Stop Moving Mob"
+buttonStop.Visible = false
+
+local dropdownMenuButton = Instance.new("TextButton")
+dropdownMenuButton.Parent = screenGui
+dropdownMenuButton.Position = UDim2.new(0, 10, 0, 70)
+dropdownMenuButton.Size = UDim2.new(0, 150, 0, 20)
+dropdownMenuButton.Text = "Select Mob"
+dropdownMenuButton.Visible = true
+
+local dropdownMenuFrame = Instance.new("ScrollingFrame")
+dropdownMenuFrame.Parent = screenGui
+dropdownMenuFrame.Position = UDim2.new(0, 10, 0, 90)
+dropdownMenuFrame.Size = UDim2.new(0, 150, 0, 100)
+dropdownMenuFrame.Visible = false
+dropdownMenuFrame.ScrollBarThickness = 10
+
+local function mobExists(mobName)
+    return game.Workspace:FindFirstChild(mobName) ~= nil
+end
+
+local mobNames = {"mutant", "CowboyMutant", "Vampire", "Bandit", "SprinterMutant"}
+
+local function updateDropdownMenu()
+    local totalHeight = 0
+    
+    for _, child in ipairs(dropdownMenuFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local yOffset = 0
+    for _, mobName in ipairs(mobNames) do
+        if mobExists(mobName) then
+            local optionButton = Instance.new("TextButton")
+            optionButton.Parent = dropdownMenuFrame
+            optionButton.Size = UDim2.new(1, 0, 0, 25)
+            optionButton.Position = UDim2.new(0, 0, 0, yOffset)
+            optionButton.Text = mobName
+            optionButton.MouseButton1Click:Connect(function()
+                selectedMob = mobName
+                dropdownMenuButton.Text = mobName
+                dropdownMenuFrame.Visible = false
+            end)
+            yOffset = yOffset + 25
+            totalHeight = totalHeight + 25
+        end
+    end
+    
+    dropdownMenuFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+end
+
+updateDropdownMenu()
+
+dropdownMenuButton.MouseButton1Click:Connect(function()
+    updateDropdownMenu()
+    dropdownMenuFrame.Visible = not dropdownMenuFrame.Visible
+end)
+
+local function MoveMob()
+    buttonStart.Visible = false
+    buttonStabilize.Visible = true
+    
+    if not startButtonEnabled then
+        return
+    end
+    
+    if not selectedMob then
+        print("No mob selected.")
+        return
+    end
+
+    for _, mob in ipairs(workspace:GetChildren()) do
+        if mob.Name == selectedMob and mob:IsA("Model") then
+            for _, part in ipairs(mob:GetDescendants()) do
+                if part:IsA("BasePart") and not part.Anchored then
+                    originalCanCollideStates[part] = part.CanCollide
+                    part.CanCollide = false
+                    local mover = Instance.new("BodyPosition", part)
+                    table.insert(movers, mover)
+                end
+            end
+        end
+    end
+
+    for _, mover in ipairs(movers) do
+        mover.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    end
+
+    isMoving = true
+    isStarted = true
+
+    while isMoving do
+        local targetPosition = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 20, 20)
+
+        for _, mover in ipairs(movers) do
+            mover.Position = targetPosition + Vector3.new(0, 100, 0)
+        end
+        
+        -- Update CanCollide every 0.21 seconds
+        for _, mob in ipairs(workspace:GetChildren()) do
+            if mob.Name == selectedMob and mob:IsA("Model") then
+                for _, part in ipairs(mob:GetDescendants()) do
+                    if part:IsA("BasePart") and not part.Anchored then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+
+        wait(0.1)
+    end
+end
+
+local function StabilizeMob()
+    buttonStabilize.Visible = false
+    buttonStop.Visible = true
+    
+    if not isStarted then
+        return
+    end
+    
+    startButtonEnabled = false
+    
+    isStabilizing = true
+    isMoving = false
+    while isStabilizing do
+        local targetPosition = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 10, 0)
+
+        for _, mob in ipairs(workspace:GetChildren()) do
+            if mob.Name == selectedMob and mob:IsA("Model") then
+                for _, mover in ipairs(movers) do
+                    mover.Position = targetPosition
+                    mover.MaxForce = Vector3.new(10000, 10000, 10000)
+                end
+            end
+        end
+        
+        -- Update CanCollide every 0.21 seconds
+        for _, mob in ipairs(workspace:GetChildren()) do
+            if mob.Name == selectedMob and mob:IsA("Model") then
+                for _, part in ipairs(mob:GetDescendants()) do
+                    if part:IsA("BasePart") and not part.Anchored then
+                        part.CanCollide = false
+                    end
+                end
+            end
+        end
+
+        wait(0.1)
+    end
+end
+
+local function StopMovingMob()
+    buttonStart.Visible = true
+    buttonStop.Visible = false
+    
+    if not isStarted then
+        return
+    end
+    
+    for _, mob in ipairs(workspace:GetChildren()) do
+        if mob.Name == selectedMob and mob:IsA("Model") then
+            for part, canCollideState in pairs(originalCanCollideStates) do
+                if canCollideState then
+                    part.CanCollide = true
+                end
+            end
+
+            for _, mover in ipairs(movers) do
+                mover:Destroy()
+            end
+        end
+    end
+    
+    startButtonEnabled = true
+    
+    isStabilizing = false
+    isMoving = false
+end
+
+buttonStart.MouseButton1Click:Connect(MoveMob)
+buttonStabilize.MouseButton1Click:Connect(StabilizeMob)
+buttonStop.MouseButton1Click:Connect(StopMovingMob)
+end
+
+local function vehicler()
+local LocalPlayer = game:GetService("Players").LocalPlayer
+local movers = {}
+local isMoving = false
+local isStarted = false
+local startButtonEnabled = true
+local originalCanCollideStates = {}
+
+local selectedVehicle = nil
+
+local screenGui = Instance.new("ScreenGui")
+screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
+
+local buttonStart = Instance.new("TextButton")
+buttonStart.Parent = screenGui
+buttonStart.Position = UDim2.new(1, -10, 0, 10)
+buttonStart.Size = UDim2.new(0, 150, 0, 50)
+buttonStart.Text = "Start Moving Vehicle"
+
+local buttonStabilize = Instance.new("TextButton")
+buttonStabilize.Parent = screenGui
+buttonStabilize.Position = UDim2.new(1, -10, 0, 10)
+buttonStabilize.Size = UDim2.new(0, 150, 0, 50)
+buttonStabilize.Text = "Stabilize Vehicle"
+buttonStabilize.Visible = false
+
+local buttonStop = Instance.new("TextButton")
+buttonStop.Parent = screenGui
+buttonStop.Position = UDim2.new(1, -10, 0, 10)
+buttonStop.Size = UDim2.new(0, 150, 0, 50)
+buttonStop.Text = "Stop Moving Vehicle"
+buttonStop.Visible = false
+
+local dropdownMenuButton = Instance.new("TextButton")
+dropdownMenuButton.Parent = screenGui
+dropdownMenuButton.Position = UDim2.new(1, -10, 0, 70)
+dropdownMenuButton.Size = UDim2.new(0, 150, 0, 20)
+dropdownMenuButton.Text = "Select Vehicle"
+dropdownMenuButton.Visible = true
+
+local dropdownMenuFrame = Instance.new("ScrollingFrame")
+dropdownMenuFrame.Parent = screenGui
+dropdownMenuFrame.Position = UDim2.new(1, -10, 0, 90)
+dropdownMenuFrame.Size = UDim2.new(0, 150, 0, 100)
+dropdownMenuFrame.Visible = false
+dropdownMenuFrame.ScrollBarThickness = 10
+
+local function vehicleExists(vehicleName)
+    return game.Workspace:FindFirstChild(vehicleName) ~= nil
+end
+
+local vehicleNames = {"Sedan", "Van"}
+
+local replicatedStorage = game:GetService("ReplicatedStorage")
+local carsFolder = replicatedStorage:FindFirstChild("Cars")
+if carsFolder then
+    for _, vehicle in ipairs(carsFolder:GetChildren()) do
+        if vehicle:IsA("Model") then
+            table.insert(vehicleNames, vehicle.Name)
+        end
+    end
+end
+
+local function updateDropdownMenu()
+    local totalHeight = 0
+    
+    for _, child in ipairs(dropdownMenuFrame:GetChildren()) do
+        if child:IsA("TextButton") then
+            child:Destroy()
+        end
+    end
+    
+    local yOffset = 0
+    for _, vehicle in ipairs(workspace:GetChildren()) do
+        if vehicle:IsA("Model") and table.find(vehicleNames, vehicle.Name) then
+            local optionButton = Instance.new("TextButton")
+            optionButton.Parent = dropdownMenuFrame
+            optionButton.Size = UDim2.new(1, 0, 0, 25)
+            optionButton.Position = UDim2.new(0, 0, 0, yOffset)
+            optionButton.Text = vehicle.Name
+            optionButton.MouseButton1Click:Connect(function()
+                selectedVehicle = vehicle
+                dropdownMenuButton.Text = vehicle.Name
+                dropdownMenuFrame.Visible = false
+            end)
+            yOffset = yOffset + 25
+            totalHeight = totalHeight + 25
+        end
+    end
+    
+    dropdownMenuFrame.CanvasSize = UDim2.new(0, 0, 0, totalHeight)
+end
+
+updateDropdownMenu()
+
+dropdownMenuButton.MouseButton1Click:Connect(function()
+    updateDropdownMenu()
+    dropdownMenuFrame.Visible = not dropdownMenuFrame.Visible
+end)
+
+local function MoveVehicle()
+    buttonStart.Visible = false
+    buttonStabilize.Visible = true
+    
+    if not startButtonEnabled then
+        return
+    end
+    
+    if not selectedVehicle or not selectedVehicle:IsA("Model") then
+        print("Vehicle not found or is not a Model.")
+        return
+    end
+
+    for _, part in ipairs(selectedVehicle:GetDescendants()) do
+        if part:IsA("BasePart") and not part.Anchored then
+            originalCanCollideStates[part] = part.CanCollide
+            part.CanCollide = false
+            local mover = Instance.new("BodyPosition", part)
+            table.insert(movers, mover)
+        end
+    end
+
+    for _, mover in ipairs(movers) do
+        mover.MaxForce = Vector3.new(math.huge, math.huge, math.huge)
+    end
+
+    isMoving = true
+    isStarted = true
+
+    while isMoving do
+        local targetPosition = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 20, 20)
+
+        for _, mover in ipairs(movers) do
+            mover.Position = targetPosition + Vector3.new(0, 100, 0)
+        end
+        wait(0.1)
+    end
+end
+
+local function StabilizeVehicle()
+    buttonStabilize.Visible = false
+    buttonStop.Visible = true
+    
+    if not isStarted then
+        return
+    end
+    
+    startButtonEnabled = false
+    
+    isStabilizing = true
+    isMoving = false
+    while isStabilizing do
+        local targetPosition = LocalPlayer.Character.HumanoidRootPart.Position + Vector3.new(0, 20, 20)
+
+        for _, mover in ipairs(movers) do
+            mover.Position = targetPosition
+            mover.MaxForce = Vector3.new(10000, 10000, 10000)
+        end
+        wait(0.1)
+    end
+end
+
+local function StopMovingVehicle()
+    buttonStart.Visible = true
+    buttonStop.Visible = false
+    
+    if not isStarted then
+        return
+    end
+    
+    for part, canCollideState in pairs(originalCanCollideStates) do
+        if canCollideState then
+            part.CanCollide = true
+        end
+    end
+
+    for _, mover in ipairs(movers) do
+        mover:Destroy()
+    end
+    
+    startButtonEnabled = true
+    
+    isStabilizing = false
+    isMoving = false
+end
+
+buttonStart.MouseButton1Click:Connect(MoveVehicle)
+buttonStabilize.MouseButton1Click:Connect(StabilizeVehicle)
+buttonStop.MouseButton1Click:Connect(StopMovingVehicle)
+end
+
+mobber()
+vehicler()
