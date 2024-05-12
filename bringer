@@ -230,34 +230,34 @@ screenGui.Parent = game.Players.LocalPlayer:WaitForChild("PlayerGui")
 
 local buttonStart = Instance.new("TextButton")
 buttonStart.Parent = screenGui
-buttonStart.Position = UDim2.new(1, -80, 0, 10)
+buttonStart.Position = UDim2.new(1, -140, 0, 10)
 buttonStart.Size = UDim2.new(0, 150, 0, 50)
 buttonStart.Text = "Start Moving Vehicle"
 
 local buttonStabilize = Instance.new("TextButton")
 buttonStabilize.Parent = screenGui
-buttonStabilize.Position = UDim2.new(1, -80, 0, 10)
+buttonStabilize.Position = UDim2.new(1, -140, 0, 10)
 buttonStabilize.Size = UDim2.new(0, 150, 0, 50)
 buttonStabilize.Text = "Stabilize Vehicle"
 buttonStabilize.Visible = false
 
 local buttonStop = Instance.new("TextButton")
 buttonStop.Parent = screenGui
-buttonStop.Position = UDim2.new(1, -80, 0, 10)
+buttonStop.Position = UDim2.new(1, -140, 0, 10)
 buttonStop.Size = UDim2.new(0, 150, 0, 50)
 buttonStop.Text = "Stop Moving Vehicle"
 buttonStop.Visible = false
 
 local dropdownMenuButton = Instance.new("TextButton")
 dropdownMenuButton.Parent = screenGui
-dropdownMenuButton.Position = UDim2.new(1, -80, 0, 70)
+dropdownMenuButton.Position = UDim2.new(1, -140, 0, 70)
 dropdownMenuButton.Size = UDim2.new(0, 150, 0, 20)
 dropdownMenuButton.Text = "Select Vehicle"
 dropdownMenuButton.Visible = true
 
 local dropdownMenuFrame = Instance.new("ScrollingFrame")
 dropdownMenuFrame.Parent = screenGui
-dropdownMenuFrame.Position = UDim2.new(1, -80, 0, 90)
+dropdownMenuFrame.Position = UDim2.new(1, -140, 0, 90)
 dropdownMenuFrame.Size = UDim2.new(0, 150, 0, 100)
 dropdownMenuFrame.Visible = false
 dropdownMenuFrame.ScrollBarThickness = 10
